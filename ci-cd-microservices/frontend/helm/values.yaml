@@ -1,6 +1,6 @@
 replicaCount: 1
 image:
-  repository: your-dockerhub-username/frontend
+  repository: saikumarnerella90/frontend
   tag: latest
 service:
   type: ClusterIP
