@@ -1,0 +1,44 @@
+pipeline {
+  agent any
+
+  environment {
+    FRONTEND_IMAGE = "saikumarnerella9030/frontend:latest"
+    BACKEND_IMAGE = "saikumarnerella9030/backend:latest"
+  }
+
+  stages {
+    stage('Clone Repo') {
+      steps {
+        git url: 'https://github.com/SaiKumarNerella9030/CI-CD-with-Jenkins-Docker-Kubernetes-Helm-and-Prometheus.git', branch: 'main'
+      }
+    }
+
+    stage('Build Docker Images') {
+      steps {
+        dir('ci-cd-microservices/frontend') {
+          sh 'docker build -t $FRONTEND_IMAGE .'
+        }
+        dir('ci-cd-microservices/backend') {
+          sh 'docker build -t $BACKEND_IMAGE .'
+        }
+      }
+    }
+
+    stage('Push Docker Images') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+          sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
+          sh 'docker push $FRONTEND_IMAGE'
+          sh 'docker push $BACKEND_IMAGE'
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes via Helm') {
+      steps {
+        sh 'helm upgrade --install frontend ./ci-cd-microservices/frontend/helm --set image.repository=$FRONTEND_IMAGE'
+        sh 'helm upgrade --install backend ./ci-cd-microservices/backend/helm --set image.repository=$BACKEND_IMAGE'
+      }
+    }
+  }
+}
